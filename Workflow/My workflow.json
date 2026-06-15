@@ -1,0 +1,200 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "cb7bc449-e83c-4bac-9108-694997f68629",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "1S6UzdGzmxBzdDoizE0dNHEtikqJ6mnM8",
+          "mode": "list",
+          "cachedResultName": "sales_updated.xlsx",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1S6UzdGzmxBzdDoizE0dNHEtikqJ6mnM8/edit?usp=drivesdk&ouid=102245182712674287810&rtpof=true&sd=true"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "bcea037f-adb4-49f5-b5e3-b6306f5256df",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "vtDMrgWqTLHnUsJc",
+          "name": "Google Drive account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "54820d5b-b39c-4ba6-9ba4-97d5ffcd9e9d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nlet totalRevenue = 0;\nlet totalQuantity = 0;\n\nlet topProduct = \"\";\nlet topProductSales = 0;\n\nlet categorySales = {};\nlet regionSales = {};\n\nfor (const item of items) {\n\n  const sales = Number(item.json[\"Sales ($)\"]) || 0;\n  const qty = Number(item.json[\"Quantity Sold\"]) || 0;\n\n  const product = item.json[\"Product Name\"];\n  const category = item.json[\"Category\"];\n  const region = item.json[\"Region\"];\n\n  totalRevenue += sales;\n  totalQuantity += qty;\n\n  // Category Sales\n  categorySales[category] = (categorySales[category] || 0) + sales;\n\n  // Region Sales\n  regionSales[region] = (regionSales[region] || 0) + sales;\n\n  // Top Product\n  if (sales > topProductSales) {\n    topProductSales = sales;\n    topProduct = product;\n  }\n}\n\nlet topRegion = \"\";\nlet topRegionSales = 0;\n\nfor (const region in regionSales) {\n  if (regionSales[region] > topRegionSales) {\n    topRegionSales = regionSales[region];\n    topRegion = region;\n  }\n}\n\nlet topCategory = \"\";\nlet topCategorySales = 0;\n\nfor (const category in categorySales) {\n  if (categorySales[category] > topCategorySales) {\n    topCategorySales = categorySales[category];\n    topCategory = category;\n  }\n}\n\nreturn [{\n  json: {\n    TotalRevenue: totalRevenue,\n    TotalQuantity: totalQuantity,\n    TopProduct: topProduct,\n    TopRegion: topRegion,\n    TopCategory: topCategory,\n    AverageRevenue: (totalRevenue / items.length).toFixed(2)\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "2591c79c-0aea-44ac-8629-d463472bea1c",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Senior Business Analyst.\n\nAnalyze the following KPIs:\n\nTotal Revenue: {{$json.TotalRevenue}}\nTotal Quantity Sold: {{$json.TotalQuantity}}\nTop Product: {{$json.TopProduct}}\nTop Region: {{$json.TopRegion}}\nTop Category: {{$json.TopCategory}}\nAverage Revenue: {{$json.AverageRevenue}}\n\nGenerate:\n\n1. Executive Summary\n2. Key Insights\n3. Business Risks\n4. Recommendations\n\nKeep the report concise and suitable for senior management."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "f900c6be-9c96-41e8-a97e-e1016a6bd1bd",
+      "name": "Message a model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FzRE8Grd7SYv0UJA",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "bharath.vikram@makoitlab.com",
+        "toEmail": "vikrambharath44@gmail.com",
+        "subject": "Business AI report",
+        "emailFormat": "text",
+        "text": "={{ $json.content.parts[0].text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1184,
+        0
+      ],
+      "id": "45a42117-c36d-4acd-83b1-d8816cbff2fd",
+      "name": "Send an Email",
+      "webhookId": "ca662895-e4a4-4f89-94ba-986b14046252",
+      "credentials": {
+        "smtp": {
+          "id": "8GBNjXNcSNlDQdkE",
+          "name": "SMTP account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "439541ff-7be1-42f9-ae96-f525b236726c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9b54f2c645369794096c1396f54b69ed6e0814063152a052131c7a4f2dca50b8"
+  },
+  "nodeGroups": [],
+  "id": "x1GyGQTUlw4WTl3i",
+  "tags": []
+}
