@@ -71,8 +71,6 @@ The AI agent generates:
 ---
 
 ## **Future Enhancements**
-
-* Power BI Integration  
 * Anomaly Detection  
 * Forecasting  
 * Real-time Dashboarding  
